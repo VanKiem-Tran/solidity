@@ -114,9 +114,9 @@ void LanguageServer::compile()
 	swap(oldRepository, m_fileRepository);
 
 	for (string const& fileName: m_openFiles)
-		m_fileRepository.setSourceByClientPath(
+		m_fileRepository.setSourceByUri(
 			fileName,
-			oldRepository.sourceUnits().at(oldRepository.clientPathToSourceUnitName(fileName))
+			oldRepository.sourceUnits().at(oldRepository.uriToSourceUnitName(fileName))
 		);
 
 	// TODO: optimize! do not recompile if nothing has changed (file(s) not flagged dirty).
@@ -178,7 +178,7 @@ void LanguageServer::compileAndUpdateDiagnostics()
 	for (auto&& [sourceUnitName, diagnostics]: diagnosticsBySourceUnit)
 	{
 		Json::Value params;
-		params["uri"] = m_fileRepository.sourceUnitNameToClientPath(sourceUnitName);
+		params["uri"] = m_fileRepository.sourceUnitNameToUri(sourceUnitName);
 		if (!diagnostics.empty())
 			m_nonemptyDiagnostics.insert(sourceUnitName);
 		params["diagnostics"] = move(diagnostics);
@@ -258,7 +258,7 @@ void LanguageServer::handleInitialize(MessageID _id, Json::Value const& _args)
 	else if (Json::Value rootPath = _args["rootPath"])
 		rootPath = rootPath.asString();
 
-	m_fileRepository = FileRepository(boost::filesystem::path(rootPath));
+	m_fileRepository = FileRepository(rootPath);
 	if (_args["initializationOptions"].isObject())
 		changeConfiguration(_args["initializationOptions"]);
 
@@ -309,7 +309,7 @@ void LanguageServer::handleTextDocumentDidOpen(Json::Value const& _args)
 	string text = _args["textDocument"]["text"].asString();
 	string uri = _args["textDocument"]["uri"].asString();
 	m_openFiles.insert(uri);
-	m_fileRepository.setSourceByClientPath(uri, move(text));
+	m_fileRepository.setSourceByUri(uri, move(text));
 	compileAndUpdateDiagnostics();
 }
 
@@ -327,7 +327,7 @@ void LanguageServer::handleTextDocumentDidChange(Json::Value const& _args)
 			"Invalid content reference."
 		);
 
-		string const sourceUnitName = m_fileRepository.clientPathToSourceUnitName(uri);
+		string const sourceUnitName = m_fileRepository.uriToSourceUnitName(uri);
 		lspAssert(
 			m_fileRepository.sourceUnits().count(sourceUnitName),
 			ErrorCode::RequestFailed,
@@ -348,7 +348,7 @@ void LanguageServer::handleTextDocumentDidChange(Json::Value const& _args)
 			buffer.replace(static_cast<size_t>(change->start), static_cast<size_t>(change->end - change->start), move(text));
 			text = move(buffer);
 		}
-		m_fileRepository.setSourceByClientPath(uri, move(text));
+		m_fileRepository.setSourceByUri(uri, move(text));
 	}
 
 	compileAndUpdateDiagnostics();
