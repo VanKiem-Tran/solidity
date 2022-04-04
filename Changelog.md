@@ -7,6 +7,7 @@ Compiler Features:
  * Peephole Optimizer: Remove operations without side effects before simple terminations.
  * Assembly-Json: Export: Include source list in `sourceList` field.
  * Commandline Interface: option ``--pretty-json`` works also with the following options: ``--abi``, ``--asm-json``, ``--ast-compact-json``, ``--devdoc``, ``--storage-layout``, ``--userdoc``.
+ * Yul EVM Code Transform: Generate more optimal code for user-defined functions that always terminate a transaction. No return labels will be pushed for calls to functions that always terminate.
 
 
 Bugfixes:
