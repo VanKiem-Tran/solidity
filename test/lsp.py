@@ -67,7 +67,7 @@ class JsonRpcProcess:
             if not line.endswith("\r\n"):
                 raise BadHeader("missing newline")
             # remove the "\r\n"
-            line = line[:-2]
+            line = line.rstrip() # Do this instead of an line[:-2], as it keeps breaking on Windows?
             if line == '':
                 break # done with the headers
             if line.startswith(CONTENT_LENGTH_HEADER):
@@ -291,7 +291,7 @@ class SolidityLSPTestSuite: # {{{
         return f"{self.project_root_dir}/{test_case_name}.sol"
 
     def get_test_file_uri(self, test_case_name):
-        return "file://" + self.get_test_file_path(test_case_name)
+        return PurePath(self.get_test_file_path(test_case_name)).as_uri()
 
     def get_test_file_contents(self, test_case_name):
         """
@@ -794,7 +794,7 @@ class SolidityLSPTestSuite: # {{{
         """
 
         self.setup_lsp(solc)
-        FILE_A_URI = f'file://{self.project_root_dir}/a.sol'
+        FILE_A_URI = f'{self.project_root_uri}/a.sol'
         solc.send_message('textDocument/didOpen', {
             'textDocument': {
                 'uri': FILE_A_URI,
@@ -822,7 +822,7 @@ class SolidityLSPTestSuite: # {{{
         )
         reports = self.wait_for_diagnostics(solc, 1)
         self.expect_equal(len(reports), 1, '')
-        self.expect_equal(reports[0]['uri'], f'file://{self.project_root_dir}/lib.sol', "")
+        self.expect_equal(reports[0]['uri'], f'{self.project_root_uri}/lib.sol', "")
         self.expect_equal(len(reports[0]['diagnostics']), 0, "should not contain diagnostics")
 
 
