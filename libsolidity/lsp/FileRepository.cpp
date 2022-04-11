@@ -27,6 +27,8 @@
 
 #include <fmt/format.h>
 
+#include <regex>
+
 using namespace std;
 using namespace solidity;
 using namespace solidity::lsp;
@@ -40,6 +42,9 @@ namespace
 
 string stripFilePrefix(string const& _path)
 {
+	regex const windowsDriveLetterPath("^file:///[a-zA-Z]:/");
+	if (regex_search(_path, windowsDriveLetterPath))
+		return _path.substr(10);
 	if (_path.find("file://") == 0)
 		return _path.substr(7);
 	else
